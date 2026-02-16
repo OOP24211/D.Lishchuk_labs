@@ -15,7 +15,7 @@ public class WordReader {
                 String[] lineWords = line.split("[\\s.,!?;:\"()\\[\\]{}]+");
                 for (String word : lineWords) {
                     if (!word.isEmpty()) {
-                        word_list.put(word.toLowerCase(), word_list.getOrDefault(word,0) + 1);
+                        word_list.put(word.toLowerCase(), word_list.getOrDefault(word.toLowerCase(),0) + 1);
                     }
                 }
             }
