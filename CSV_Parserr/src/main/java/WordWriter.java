@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.io.IOException;
 
 public class WordWriter {
-    public void write(String FileName, List<Map.Entry<String, Integer>> word_list){
+    protected void write(String FileName, List<Map.Entry<String, Integer>> word_list){
         Path path = Path.of(FileName);
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             for (Map.Entry<String, Integer> entry : word_list) {
