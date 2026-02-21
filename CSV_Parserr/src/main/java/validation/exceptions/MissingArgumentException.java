@@ -5,4 +5,3 @@ public class MissingArgumentException extends ValidationException {
         super(message);
     }
 }
-

@@ -7,6 +7,10 @@ import validation.arguments.ArgumentsValidator;
 
 public class Main {
     public static void main(String[] args) {
+        if  (args.length > 2) {
+            System.out.printf("Too many arguments: %s");
+            System.exit(1);
+        }
         var config = ArgumentsValidationConfig.builder()
                 .arg(0, new NotEmptyValidator())
                 .arg(1, new NotEmptyValidator())
