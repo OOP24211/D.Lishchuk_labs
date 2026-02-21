@@ -1,9 +1,8 @@
+import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
-public class WordFrequencySorter extends CsvParserCli{
-    protected void sort(Map<String, Integer> unsorted_map){
-        result_of_sorting = new ArrayList<>(unsorted_map.entrySet());
+public class WordFrequencySorter{
+    protected void sort(List<Map.Entry<String, Integer>> result_of_sorting){
         result_of_sorting.sort((a, b) -> b.getValue().compareTo(a.getValue()));
     }
 }

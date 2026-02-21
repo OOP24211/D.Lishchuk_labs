@@ -1,6 +1,8 @@
-public class LineParser extends CsvParserCli {
+import java.util.Map;
+
+public class LineParser {
     private static final String REGULAR_EXPRESSION_OF_SEPARATING_CHARACTERS = "[\\s.,!?;:\"()\\[\\]{}]+";
-    protected void parseLine(String line) {
+    protected void parseLine(String line, Map<String, Integer> result_of_parsing) {
         String[] lineWords = line.split(REGULAR_EXPRESSION_OF_SEPARATING_CHARACTERS);
         for (String word : lineWords) {
             if (!word.isEmpty()) {
