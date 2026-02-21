@@ -4,9 +4,8 @@ public class Main {
             System.err.println("Формат ввода: input.txt output.csv");
             System.exit(1);
         }
-        WordReader Reader = new WordReader();
-        Reader.Read(args[0]);
-        WordWriter Writer = new WordWriter();
-        Writer.write(args[1], Reader.result_of_reading);
+
+        CsvParserCli csvParserCli = new CsvParserCli();
+        csvParserCli.processing(args[0], args[1]);
     }
 }
