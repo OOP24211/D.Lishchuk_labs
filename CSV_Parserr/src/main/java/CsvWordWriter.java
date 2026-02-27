@@ -5,7 +5,7 @@ import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.io.IOException;
 
-public class Csv_WordWriter implements IWordWriter {
+public class CsvWordWriter implements IWordWriter {
     @Override
     public void write(String FileName, List<Map.Entry<String, Integer>> word_list){
         Path path = Path.of(FileName);

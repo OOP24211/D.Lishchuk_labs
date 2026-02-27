@@ -3,6 +3,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import validation.validators.NotEmptyValidator;
+import validation.validators.IsCsvFileValidator;
+import validation.validators.IsTxtFileValidator;
+
+import validation.arguments.ArgumentsValidationConfig;
+import validation.arguments.ArgumentsValidator;
+
 public class CsvParserCli {
     private final IWordReader reader;
     private final LineParser lineParser;
@@ -13,13 +20,21 @@ public class CsvParserCli {
     protected Map<String, Integer> result_of_parsing;
     protected List<Map.Entry<String, Integer>> result_of_sorting;
 
-    public CsvParserCli() {
+    public CsvParserCli(Object... args) {
         reader = new Txt_WordReader();
         lineParser = new LineParser();
         freq_sorter = new WordFrequencySorter();
-        writer = new Csv_WordWriter();
+        writer = new CsvWordWriter();
         result_of_reading = new ArrayList<>();
         result_of_parsing = new HashMap<>();
+
+        var config = ArgumentsValidationConfig.builder()
+                .arg(0, new NotEmptyValidator())
+                .arg(1, new NotEmptyValidator())
+                .arg(0, new IsTxtFileValidator())
+                .arg(1, new IsCsvFileValidator())
+                .build();
+        new ArgumentsValidator(config).validate(args);
     }
 
     public void processing (String input_file, String output_file) {
