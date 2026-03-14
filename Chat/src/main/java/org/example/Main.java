@@ -20,10 +20,12 @@ public class Main extends  Application {
     @Override
     public void start(Stage stage) {
         ListView<String> messageList = new ListView<>();
+        ListView<String> usersList = new ListView<>();
 
         ChatClient client = new ChatClient(
                 URI.create("ws://localhost:8080"),
-                messageList
+                messageList,
+                usersList
         );
         client.connect();
 
@@ -51,11 +53,16 @@ public class Main extends  Application {
                 inputField.clear();
             }
         });
+
         BorderPane layoutForChat = new BorderPane();
-        layoutForChat.setCenter(messageList);
         HBox bottomPanel = new HBox(10, inputField, sendButton);
+
+        layoutForChat.setCenter(messageList);
         layoutForChat.setBottom(bottomPanel);
+        layoutForChat.setRight(usersList);
+
         Scene scene = new Scene(layoutForChat, 400, 300);
+
         stage.setTitle("Чат");
         stage.setScene(scene);
         stage.show();

@@ -10,32 +10,65 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 import javafx.scene.control.ListView;
+
+import java.awt.dnd.InvalidDnDOperationException;
 import java.net.URI;
 
 public class ChatClient extends WebSocketClient {
     private ListView<String> messageList;
+    private ListView<String> usersList;
     final private ObjectMapper mapper = new ObjectMapper();
 
-    public ChatClient(URI serverUri, ListView<String> messageList) {
+    public ChatClient(URI serverUri, ListView<String> messageList, ListView<String> usersList) {
         super(serverUri);
         this.messageList = messageList;
+        this.usersList = usersList;
     }
+
     @Override
-    public void onOpen(ServerHandshake handshake){}
+    public void onOpen(ServerHandshake handshake) {
+    }
+
     @Override
-    public void onMessage(String message){
+    public void onMessage(String message) {
         try {
             ChatMessage msg = mapper.readValue(message, ChatMessage.class);
-            Platform.runLater(()->{
-               messageList.getItems().add("[" + msg.user + "]: " + msg.text);
-            });
+            switch (msg.type) {
+                case "message":
+                    Platform.runLater(() -> {
+                        messageList.getItems().add("[" + msg.user + "]: " + msg.text);
+                    });
+                    break;
+
+                case "join":
+                    Platform.runLater(() -> {
+                        usersList.getItems().add(msg.user);
+                    });
+                    break;
+                case "leave":
+                    Platform.runLater(() -> {
+                        usersList.getItems().remove(msg.user);
+                    });
+                    break;
+                case "userList":
+                    Platform.runLater(() -> {
+                        usersList.getItems().addAll(msg.userList);
+                    });
+                    break;
+                default:
+                    throw new InvalidDnDOperationException("Invalid message type");
+            }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
+
     @Override
-    public void onError(Exception ex){}
+    public void onError(Exception ex) {
+    }
+
     @Override
-    public void onClose(int code, String reason, boolean remote){}
+    public void onClose(int code, String reason, boolean remote) {
+    }
 
 }
