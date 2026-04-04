@@ -1,6 +1,7 @@
 package org.example;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.sun.nio.sctp.SctpChannel;
 import javafx.application.Platform;
 import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
@@ -18,15 +19,28 @@ public class ChatClient extends WebSocketClient {
     private ListView<String> messageList;
     private ListView<String> usersList;
     final private ObjectMapper mapper = new ObjectMapper();
+    final private String login;
 
-    public ChatClient(URI serverUri, ListView<String> messageList, ListView<String> usersList) {
+    public ChatClient(URI serverUri, ListView<String> messageList, ListView<String> usersList,  String login) {
         super(serverUri);
         this.messageList = messageList;
         this.usersList = usersList;
+        this.login = login;
     }
 
     @Override
     public void onOpen(ServerHandshake handshake) {
+        ChatMessage loginMessage = new ChatMessage();
+        loginMessage.user = login;
+        loginMessage.text = "";
+        loginMessage.type = "login";
+        String json = null;
+        try {
+            json = mapper.writeValueAsString(loginMessage);
+        } catch (JsonProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
+        send(json);
     }
 
     @Override
