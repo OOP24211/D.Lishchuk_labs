@@ -23,7 +23,7 @@ import java.net.URI;
 public class Main extends  Application {
     private ListView<String> messageList = new ListView<>();
     private ListView<String> usersList = new ListView<>();
-
+    private ChatClient client;
     private Scene loginSceneCreator(Stage stage) {
         BorderPane layoutForLoginPage = new BorderPane();
         TextField inputLoginField = new TextField();
@@ -43,19 +43,58 @@ public class Main extends  Application {
                 loginVBox.getChildren().add(emptyLoginFieldErrorMessage);
             }
             else {
-                ChatClient client = new ChatClient(
+                client = new ChatClient(
                         URI.create("ws://localhost:8080"),
                         messageList,
                         usersList,
                         login
                 );
                 client.connect();
-                stage.setScene(chatListSceneCreator(client, stage, login));
+                stage.setScene(roomListSceneCreator(client, stage, login));
             }
         });
         stage.setScene(loginScene);
         stage.show();
         return loginScene;
+    }
+    private Scene roomListSceneCreator(ChatClient client, Stage stage, String login) {
+        BorderPane layoutForRoomListPage = new BorderPane();
+            TextField inputFieldIdRoom = new TextField();
+        inputFieldIdRoom.setPromptText("ID комнаты");
+        Button signInBottom = new Button("Подключиться");
+        HBox joinRoomHbox = new HBox(10,inputFieldIdRoom,signInBottom);
+        layoutForRoomListPage.setCenter(joinRoomHbox);
+        Scene roomListScene = new Scene(layoutForRoomListPage, 400, 300);
+        ObjectMapper mapper = new ObjectMapper();
+        signInBottom.setOnAction(e -> {
+            String idRoom = inputFieldIdRoom.getText();
+            inputFieldIdRoom.clear();
+            if (idRoom.isEmpty()) {
+                Text emptyLoginFieldErrorMessage = new Text("Empty Field Id Room");
+                emptyLoginFieldErrorMessage.setFont(Font.font("Palatino Linotype", FontWeight.BOLD, 24));
+                emptyLoginFieldErrorMessage.setFill(Color.RED);
+                layoutForRoomListPage.setBottom(emptyLoginFieldErrorMessage);
+            }
+            else {
+                stage.setScene(chatListSceneCreator(client, stage, login));
+                ChatMessage roomIdMsg =  new ChatMessage();
+                roomIdMsg.user = login;
+                roomIdMsg.type = "roomID";
+                roomIdMsg.text = idRoom;
+                String json = null;
+                try {
+                    json = mapper.writeValueAsString(roomIdMsg);
+                } catch (JsonProcessingException ex) {
+                    throw new RuntimeException(ex);
+                }
+                client.send(json);
+               //как=то обрабатывать подключение
+            }
+        });
+        stage.setScene(roomListScene);
+        stage.show();
+        return roomListScene;
+
     }
     private Scene chatListSceneCreator(ChatClient client, Stage stage, String login) {
         TextField inputField = new TextField();
@@ -93,6 +132,11 @@ public class Main extends  Application {
         Scene chatListScene = new Scene(layoutForChat, 400, 300);
         return chatListScene;
 
+    }
+    public  void stop(){
+        if(client != null){
+            client.close();
+        }
     }
     @Override
     public void start(Stage stage) {

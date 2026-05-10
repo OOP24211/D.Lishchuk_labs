@@ -15,8 +15,11 @@ import java.util.Set;
 
 public class ChatServer extends WebSocketServer {
     final private ObjectMapper mapper = new ObjectMapper();
-    static Set<String> usersList = new LinkedHashSet<String>();
+    static HashMap<String, LinkedHashSet> usersList = new HashMap<String, LinkedHashSet>();
     private HashMap<WebSocket, String> socketAddressToLoginMap = new HashMap();
+    private HashMap<String, Set<WebSocket>> roomsList = new HashMap<>();
+    private HashMap<WebSocket, String> connectionToRoomList = new HashMap<>();
+
     public ChatServer(int port) {
         super(new InetSocketAddress(port));
     }
@@ -33,38 +36,56 @@ public class ChatServer extends WebSocketServer {
             switch (msg.type) {
                 case "message":
                     System.out.println("[" + msg.user + "]: " + msg.text);
-                    broadcast(message);
+                    String roomId = connectionToRoomList.get(conn);
+                    for (WebSocket user : roomsList.get(roomId)) {
+                        user.send(message);
+                    }
                     break;
-                    case "login":
-                        String login = msg.user;
-                        System.out.println("Новый клиент: " + login);
+                case "login":
+                    String login = msg.user;
+                    socketAddressToLoginMap.put(conn, login);
+                    System.out.println("Новый клиент: " + login);
+                    break;
+                case "roomID":
+                    String roomID = msg.text;
+                    if (roomsList.containsKey(roomID)) {
+                        roomsList.get(roomID).add(conn);
+                    } else {
+                        roomsList.put(roomID, new LinkedHashSet<>());
+                        roomsList.get(roomID).add(conn);
+                        usersList.put(roomID, new LinkedHashSet());
 
-                        ChatMessage userListMsg = new ChatMessage();
-                        userListMsg.type = "userList";
-                        userListMsg.userList = usersList.stream().toList();
+                    }
 
-                        String json;
-                        try {
-                            json = this.mapper.writeValueAsString(userListMsg);
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException(e);
-                        }
+                    connectionToRoomList.put(conn, roomID);
+                    ChatMessage userListMsg = new ChatMessage();
+                    userListMsg.type = "userList";
+                    userListMsg.userList = usersList.get(roomID).stream().toList();
 
-                        conn.send(json);
+                    String json;
+                    try {
+                        json = this.mapper.writeValueAsString(userListMsg);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
 
-                        ChatMessage joinUserMessage = new ChatMessage();
-                        joinUserMessage.type = "join";
-                        joinUserMessage.user = login;
+                    conn.send(json);
 
-                        try {
-                            json = this.mapper.writeValueAsString(joinUserMessage);
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException(e);
-                        }
+                    ChatMessage joinUserMessage = new ChatMessage();
+                    joinUserMessage.type = "join";
+                    login = socketAddressToLoginMap.get(conn);
+                    joinUserMessage.user = login;
+                    try {
+                        json = this.mapper.writeValueAsString(joinUserMessage);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
 
-                        socketAddressToLoginMap.put(conn, login);
-                        usersList.add(joinUserMessage.user);
-                        broadcast(json);
+                    socketAddressToLoginMap.put(conn, login);
+                    usersList.get(roomID).add(login);
+                    for (WebSocket user : roomsList.get(roomID)) {
+                        user.send(json);
+                    }
 
             }
         } catch (Exception e) {
@@ -74,21 +95,35 @@ public class ChatServer extends WebSocketServer {
 
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-        System.out.println("Клиент отключился: " + conn.getRemoteSocketAddress());
         String login = socketAddressToLoginMap.get(conn);
-        socketAddressToLoginMap.remove(conn);
-        usersList.remove(login);
+        String roomID = connectionToRoomList.get(conn);
 
-        ChatMessage msg = new ChatMessage();
-        msg.type = "leave";
-        msg.user = login;
-        String json;
-        try {
-            json = this.mapper.writeValueAsString(msg);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        System.out.println("Клиент отключился: " + login);
+
+        socketAddressToLoginMap.remove(conn);
+
+        if (roomID != null) {
+            usersList.get(roomID).remove(login);
+            String json;
+            ChatMessage msg = new ChatMessage();
+            msg.type = "leave";
+            msg.user = login;
+            try {
+                json = this.mapper.writeValueAsString(msg);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            roomsList.get(roomID).remove(conn);
+            connectionToRoomList.remove(conn);
+            if (roomsList.get(roomID).isEmpty()) {
+                roomsList.remove(roomID);
+            } else {
+                System.out.println("sadasd");
+                for (WebSocket user : roomsList.get(roomID)) {
+                    user.send(json);
+                }
+            }
         }
-        broadcast(json);
     }
 
     @Override
