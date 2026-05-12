@@ -56,6 +56,19 @@ public class ChatServer extends WebSocketServer {
                 case "roomID":
                     String roomID = msg.text;
                     if (roomsList.containsKey(roomID)) {
+                        if (usersList.get(roomID).contains(socketAddressToLoginMap.get(conn))) {
+                            ChatMessage loginValidatingError = new ChatMessage();
+                            loginValidatingError.type = "ERROR";
+                            loginValidatingError.text = "loginValidatingError";
+                            String json;
+                            try {
+                                json = this.mapper.writeValueAsString(loginValidatingError);
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+                            conn.send(json);
+                            break;
+                        }
                         roomsList.get(roomID).add(conn);
                     } else {
                         roomsList.put(roomID, new LinkedHashSet<>());

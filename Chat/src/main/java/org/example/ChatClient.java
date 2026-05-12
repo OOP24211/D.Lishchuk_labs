@@ -20,6 +20,10 @@ public class ChatClient extends WebSocketClient {
     private ListView<String> usersList;
     final private ObjectMapper mapper = new ObjectMapper();
     final private String login;
+    Runnable loginValidatingError;
+    public void setLoginValidatingError(Runnable callback) {
+        this.loginValidatingError = callback;
+    }
 
     public ChatClient(URI serverUri, ListView<String> messageList, ListView<String> usersList, String login) {
         super(serverUri);
@@ -75,6 +79,16 @@ public class ChatClient extends WebSocketClient {
                     Platform.runLater(() -> {
                         messageList.getItems().addAll(msg.chatMessageHistory);
                     });
+                    break;
+                case "ERROR":
+                    switch (msg.text) {
+                        case "loginValidatingError":
+                            Platform.runLater(loginValidatingError);
+                            break;
+                        default:
+                            //неизвестная ошибка
+                            break;
+                    }
                     break;
                 default:
                     throw new InvalidDnDOperationException("Invalid message type");

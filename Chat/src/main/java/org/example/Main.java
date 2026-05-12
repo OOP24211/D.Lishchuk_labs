@@ -24,7 +24,7 @@ public class Main extends  Application {
     private ListView<String> messageList = new ListView<>();
     private ListView<String> usersList = new ListView<>();
     private ChatClient client;
-    private Scene loginSceneCreator(Stage stage) {
+    private Scene loginSceneCreator(Stage stage, Text errorMessage) {
         BorderPane layoutForLoginPage = new BorderPane();
         TextField inputLoginField = new TextField();
         inputLoginField.setPromptText("Логин");
@@ -32,6 +32,9 @@ public class Main extends  Application {
 
         VBox loginVBox = new VBox(10,inputLoginField,signInBottom);
         layoutForLoginPage.setCenter(loginVBox);
+        if(errorMessage != null) {
+            loginVBox.getChildren().add(errorMessage);
+        }
         Scene loginScene = new Scene(layoutForLoginPage, 400, 300);
 
         signInBottom.setOnAction(e -> {
@@ -87,8 +90,13 @@ public class Main extends  Application {
                 } catch (JsonProcessingException ex) {
                     throw new RuntimeException(ex);
                 }
+                client.setLoginValidatingError(()->{
+                    Text busyLoginErrorMessage = new Text("This Login is busy now");
+                    busyLoginErrorMessage.setFont(Font.font("Palatino Linotype", FontWeight.BOLD, 24));
+                    busyLoginErrorMessage.setFill(Color.RED);
+                    stage.setScene(loginSceneCreator(stage, busyLoginErrorMessage));
+                });
                 client.send(json);
-               //как=то обрабатывать подключение
             }
         });
         stage.setScene(roomListScene);
@@ -141,7 +149,7 @@ public class Main extends  Application {
     @Override
     public void start(Stage stage) {
         stage.setTitle("Чат");
-        loginSceneCreator(stage);
+        loginSceneCreator(stage, null);
     }
 
     public static void main(String[] args) {
