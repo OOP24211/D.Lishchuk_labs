@@ -21,7 +21,7 @@ public class ChatClient extends WebSocketClient {
     final private ObjectMapper mapper = new ObjectMapper();
     final private String login;
 
-    public ChatClient(URI serverUri, ListView<String> messageList, ListView<String> usersList,  String login) {
+    public ChatClient(URI serverUri, ListView<String> messageList, ListView<String> usersList, String login) {
         super(serverUri);
         this.messageList = messageList;
         this.usersList = usersList;
@@ -50,7 +50,9 @@ public class ChatClient extends WebSocketClient {
             switch (msg.type) {
                 case "message":
                     Platform.runLater(() -> {
-                        messageList.getItems().add("[" + msg.user + "]: " + msg.text);
+                        if (!msg.user.equals(login)) {
+                            messageList.getItems().add("[" + msg.user + "]: " + msg.text);
+                        }
                     });
                     break;
 
@@ -67,6 +69,11 @@ public class ChatClient extends WebSocketClient {
                 case "userList":
                     Platform.runLater(() -> {
                         usersList.getItems().addAll(msg.userList);
+                    });
+                    break;
+                case "chatHistory":
+                    Platform.runLater(() -> {
+                        messageList.getItems().addAll(msg.chatMessageHistory);
                     });
                     break;
                 default:

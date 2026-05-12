@@ -8,17 +8,16 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 public class ChatServer extends WebSocketServer {
     final private ObjectMapper mapper = new ObjectMapper();
+    private static final int messagesLimit = 100;
     static HashMap<String, LinkedHashSet> usersList = new HashMap<String, LinkedHashSet>();
     private HashMap<WebSocket, String> socketAddressToLoginMap = new HashMap();
     private HashMap<String, Set<WebSocket>> roomsList = new HashMap<>();
     private HashMap<WebSocket, String> connectionToRoomList = new HashMap<>();
+    private HashMap<String, List<String>> chatMessageHistories = new HashMap<>();
 
     public ChatServer(int port) {
         super(new InetSocketAddress(port));
@@ -40,6 +39,14 @@ public class ChatServer extends WebSocketServer {
                     for (WebSocket user : roomsList.get(roomId)) {
                         user.send(message);
                     }
+                    System.out.println("net");
+                    if (chatMessageHistories.get(roomId) != null && chatMessageHistories.get(roomId).size() > messagesLimit) {
+                        chatMessageHistories.get(roomId).removeFirst();
+                    }
+                    System.out.println("da");
+                    chatMessageHistories.get(roomId).add("[" + msg.user + "]: " + msg.text);
+                    System.out.println("dasd");
+                    System.out.println(chatMessageHistories.get(roomId).size());
                     break;
                 case "login":
                     String login = msg.user;
@@ -54,6 +61,7 @@ public class ChatServer extends WebSocketServer {
                         roomsList.put(roomID, new LinkedHashSet<>());
                         roomsList.get(roomID).add(conn);
                         usersList.put(roomID, new LinkedHashSet());
+                        chatMessageHistories.put(roomID, new ArrayList<>());
 
                     }
 
@@ -68,7 +76,16 @@ public class ChatServer extends WebSocketServer {
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }
+                    conn.send(json);
 
+                    ChatMessage chatHistoryMsg = new ChatMessage();
+                    chatHistoryMsg.type = "chatHistory";
+                    chatHistoryMsg.chatMessageHistory = chatMessageHistories.get(roomID);
+                    try {
+                        json = this.mapper.writeValueAsString(chatHistoryMsg);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
                     conn.send(json);
 
                     ChatMessage joinUserMessage = new ChatMessage();

@@ -7,4 +7,5 @@ public class ChatMessage {
     public String user;
     public String text;
     public List<String> userList;
+    public List<String> chatMessageHistory;
 }
